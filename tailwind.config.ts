@@ -56,6 +56,10 @@ export default {
         obsidian: "hsl(var(--obsidian))",
         "obsidian-light": "hsl(var(--obsidian-light))",
         glass: "hsl(var(--glass))",
+        "bridge-dark": "#050705",
+        "bridge-teal": "#2DD4BF",
+        "bridge-gold": "#C5A358",
+        "bridge-glass": "rgba(255, 255, 255, 0.08)",
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",

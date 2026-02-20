@@ -40,20 +40,20 @@ const MessageBubble = ({ message }: MessageBubbleProps) => {
       transition={{ duration: 0.25, ease: 'easeOut' }}
       className={`flex ${isLeft ? 'justify-start' : 'justify-end'} px-4`}
     >
-      <div className={`relative max-w-[85%] sm:max-w-[70%] ${isLeft ? 'glass-bubble-left' : 'glass-bubble-right'} p-3.5 space-y-2`}>
+      <div className={`relative max-w-[72%] bg-bridge-glass backdrop-blur-lg border border-white/20 p-2 rounded-2xl ${isLeft ? 'rounded-tl-none' : 'rounded-tr-none'} shadow-xl space-y-1`}>
         {/* Language badge */}
         <div className="flex items-center justify-between">
-          <span className={`text-[10px] font-semibold uppercase tracking-widest ${
-            message.originalLanguage === 'Kikuyu' ? 'text-gold' : 'text-emerald-accent'
+          <span className={`text-[11px] font-medium uppercase tracking-wider ${
+            message.originalLanguage === 'Kikuyu' ? 'text-bridge-teal' : 'text-white'
           }`}>
             {message.originalLanguage}
           </span>
           <div className="relative" ref={menuRef}>
             <button
               onClick={() => setMenuOpen(!menuOpen)}
-              className="p-1 rounded-full hover:bg-muted/50 transition-colors text-muted-foreground"
+              className="p-1 rounded-full hover:bg-white/10 transition-colors text-white/60"
             >
-              <MoreVertical size={14} />
+              <MoreVertical size={16} />
             </button>
             <AnimatePresence>
               {menuOpen && (
@@ -62,15 +62,15 @@ const MessageBubble = ({ message }: MessageBubbleProps) => {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 8, scale: 0.98 }}
                   transition={{ duration: 0.15 }}
-                  className={`absolute ${isLeft ? 'left-0' : 'right-0'} top-8 z-50 w-52 rounded-xl glass-surface p-1.5 shadow-xl`}
+                  className={`absolute ${isLeft ? 'left-0' : 'right-0'} top-8 z-50 w-52 rounded-xl bg-bridge-glass backdrop-blur-2xl border border-white/30 p-1.5 shadow-2xl`}
                 >
                   {menuItems.map((item) => (
                     <button
                       key={item.label}
                       onClick={() => setMenuOpen(false)}
-                      className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs text-foreground/80 hover:bg-muted/50 transition-colors"
+                      className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-white hover:bg-white/10 transition-colors"
                     >
-                      <item.icon size={14} strokeWidth={1.5} className="text-muted-foreground" />
+                      <item.icon size={14} strokeWidth={1.5} className="text-white/60" />
                       {item.label}
                     </button>
                   ))}
@@ -81,19 +81,19 @@ const MessageBubble = ({ message }: MessageBubbleProps) => {
         </div>
 
         {/* Original text */}
-        <p className="text-sm font-medium leading-relaxed text-foreground">
+        <p className="text-sm font-medium leading-snug text-white">
           {message.originalText}
         </p>
 
         {/* Translated text */}
-        <p className="text-xs leading-relaxed text-muted-foreground">
+        <p className="text-xs leading-relaxed text-white/70">
           {message.translatedText}
         </p>
 
         {/* Footer: confidence + timestamp */}
         <div className="flex items-center justify-between pt-1">
           <ConfidenceRing confidence={message.confidence} />
-          <span className="text-[10px] text-muted-foreground/60">{time}</span>
+          <span className="text-[10px] text-white/40">{time}</span>
         </div>
       </div>
     </motion.div>

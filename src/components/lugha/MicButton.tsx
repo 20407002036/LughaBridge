@@ -25,28 +25,32 @@ const MicButton = ({ state, onPress }: MicButtonProps) => {
         key={state}
         initial={{ opacity: 0, y: 4 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-xs font-medium text-muted-foreground tracking-wide"
+        className="text-xs font-medium text-white/60 tracking-wide"
       >
         {stateLabels[state]}
       </motion.span>
-      <button
-        onClick={onPress}
-        disabled={isProcessing}
-        className={`
-          relative flex items-center justify-center w-16 h-16 rounded-full transition-all duration-300
-          ${isRecording ? 'bg-secondary glow-emerald animate-pulse-glow' : ''}
-          ${!isRecording && !isProcessing ? 'bg-primary glow-gold-subtle animate-mic-idle' : ''}
-          ${isProcessing ? 'bg-muted' : ''}
-          disabled:cursor-wait
-        `}
-      >
+      <div className="relative">
+        {/* Radial glow effect */}
+        <div className="absolute inset-0 w-20 h-20 rounded-full mic-glow"></div>
+        <button
+          onClick={onPress}
+          disabled={isProcessing}
+          className={`
+            relative z-30 flex items-center justify-center w-20 h-20 rounded-full transition-all duration-300 border-4 border-bridge-dark
+            ${isRecording ? 'bg-gradient-to-br from-bridge-teal to-[#1fb5a0] shadow-[0_0_50px_rgba(45,212,191,0.4)] animate-pulse' : ''}
+            ${!isRecording && !isProcessing ? 'bg-gradient-to-br from-bridge-teal to-[#1fb5a0] shadow-[0_0_50px_rgba(45,212,191,0.4)] hover:scale-105' : ''}
+            ${isProcessing ? 'bg-gray-600' : ''}
+            active:scale-95
+            disabled:cursor-wait
+          `}
+        >
         {/* Waveform bars when listening */}
         {isRecording ? (
           <div className="flex items-center gap-[3px]">
             {[0, 1, 2, 3, 4].map((i) => (
               <motion.div
                 key={i}
-                className="w-[3px] rounded-full bg-foreground"
+                className="w-[3px] rounded-full bg-white"
                 animate={{ height: [4, 16, 4] }}
                 transition={{
                   duration: 0.6,
@@ -59,15 +63,15 @@ const MicButton = ({ state, onPress }: MicButtonProps) => {
           </div>
         ) : (
           <svg
-            width="24"
-            height="24"
+            width="32"
+            height="32"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
             strokeWidth="1.5"
             strokeLinecap="round"
             strokeLinejoin="round"
-            className={isProcessing ? 'text-muted-foreground' : 'text-primary-foreground'}
+            className={isProcessing ? 'text-gray-400' : 'text-white'}
           >
             <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
             <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
@@ -75,6 +79,7 @@ const MicButton = ({ state, onPress }: MicButtonProps) => {
           </svg>
         )}
       </button>
+      </div>
     </div>
   );
 };

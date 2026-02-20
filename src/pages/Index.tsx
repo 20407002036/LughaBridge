@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
-import ChatLayout from '@/components/lugha/ChatLayout';
+import ChatLayoutPro from '@/components/lugha/ChatLayoutPro';
 import { mockMessages, demoSequence, type ChatMessage, type SystemState } from '@/data/mockMessages';
 
 const Index = () => {
@@ -95,7 +95,7 @@ const Index = () => {
   }, []);
 
   return (
-    <ChatLayout
+    <ChatLayoutPro
       messages={messages}
       systemState={systemState}
       demoMode={demoMode}
