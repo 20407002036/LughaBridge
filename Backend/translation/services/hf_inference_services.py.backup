@@ -1,0 +1,346 @@
+"""
+Hugging Face Inference API service implementations.
+Uses cloud-hosted models via HF Inference API instead of local models.
+"""
+
+import logging
+import time
+from typing import Dict, Any
+from django.conf import settings
+import os
+import uuid
+
+try:
+    from huggingface_hub import InferenceClient
+    HF_HUB_AVAILABLE = True
+except ImportError:
+    HF_HUB_AVAILABLE = False
+    logging.warning("huggingface_hub not installed. Run: pip install huggingface_hub")
+
+from .base import ASRService, TranslationService, TTSService
+
+logger = logging.getLogger(__name__)
+
+
+class HFInferenceASR(ASRService):
+    """
+    ASR service using Hugging Face Inference API.
+    Calls cloud-hosted Wav2Vec2/W2V-BERT models for speech recognition.
+    """
+    
+    def __init__(self):
+        """Initialize HF Inference ASR service."""
+        if not HF_HUB_AVAILABLE:
+            raise ImportError("huggingface_hub is required. Run: pip install huggingface_hub")
+        
+        self.model_configs = settings.MODELS['asr']
+        self.token = settings.HF_TOKEN
+        
+        if not self.token:
+            logger.warning(
+                "HF_TOKEN not set. HF Inference API requests may be rate-limited. "
+                "Get a token from https://huggingface.co/settings/tokens"
+            )
+        
+        # Initialize Inference Client
+        self.client = InferenceClient(token=self.token)
+    
+    def transcribe(self, audio_path: str, language: str) -> Dict[str, Any]:
+        """
+        Transcribe audio file using HF Inference API.
+        
+        Args:
+            audio_path: Path to audio file (wav, mp3, etc.)
+            language: Source language code (kikuyu, swahili, english)
+            
+        Returns:
+            dict: {"text": str, "confidence": float}
+        """
+        model_name = self.model_configs.get(language)
+        if not model_name:
+            raise ValueError(f"No ASR model configured for language: {language}")
+        
+        logger.info(f"Transcribing audio via HF API for {language}: {model_name}")
+        
+        try:
+            # Read audio file as bytes
+            with open(audio_path, 'rb') as audio_file:
+                audio_data = audio_file.read()
+            
+            # Call HF Inference API using InferenceClient
+            result = self.client.automatic_speech_recognition(
+                audio_data,
+                model=model_name
+            )
+            
+            # Extract text from response
+            if isinstance(result, dict):
+                transcribed_text = result.get('text', '')
+            elif isinstance(result, str):
+                transcribed_text = result
+            else:
+                logger.error(f"Unexpected API response format: {result}")
+                transcribed_text = ""
+            
+            logger.info(f"ASR successful: {transcribed_text[:50]}...")
+            
+            return {
+                "text": transcribed_text,
+                "confidence": 0.95  # HF API doesn't return confidence scores
+            }
+            
+        except Exception as e:
+            logger.error(f"HF Inference API ASR error for {language}: {str(e)}")
+            raise
+    """
+    
+    # Note: HF deprecated api-inference.huggingface.co in favor of serverless inference
+    # Using the Inference Client approach or direct model endpoints
+    API_URL = "https://api-inference.huggingface.co/models/"
+    
+    def __init__(self):
+        """Initialize HF Inference translation service."""
+        self.model_name = settings.MODELS['translation']['model']
+        self.lang_codes = settings.MODELS['translation']['lang_codes']
+        self.token = settings.HF_TOKEN
+        
+        if not self.token:
+            logger.warning(
+                "HF_TOKEN not set. HF Inference API requests may be rate-limited."
+            )
+        
+        self.headers = {
+            "Authorization": f"Bearer {self.token}",
+            "Content-Type": "application/json"
+        } if self.token else {"Content-Type": "application/json"}
+    
+    def translate(self, text: str, source_lang: str, target_lang: str) -> Dict[str, Any]:
+        """
+        Translate text using HF Inference API.
+        
+        Args:
+            text: Text to translate
+            source_lang: Source language (kikuyu, swahili, english)
+            target_lang: Target language (kikuyu, swahili, english)
+            
+        Returns:
+            dict: {"text": str, "confidence": float}
+        """
+        src_code = self.lang_codes.get(source_lang)
+        tgt_code = self.lang_codes.get(target_lang)
+        
+        if not src_code or not tgt_code:
+            raise ValueError(f"Unsupported language pair: {source_lang} -> {target_lang}")
+        
+        logger.info(f"Translating via HF API: {source_lang} -> {target_lang}")
+        
+        try:
+            # Prepare request payload
+            payload = {
+                "inputs": text,
+                "parameters": {
+                    "src_lang": src_code,
+                    "tgt_lang": tgt_code
+                }
+            }
+            
+            # Call HF Inference API
+            response = self._call_api_with_retry(
+                url=f"{self.API_URL}{self.model_name}",
+                json_data=payload,
+                max_retries=3
+            )
+            
+            # Parse response
+            if isinstance(response, list) and len(response) > 0:
+                translated_text = response[0].get('translation_text', '')
+            elif isinstance(response, dict):
+                translated_text = response.get('translation_text', '')
+            else:
+                logger.error(f"Unexpected API response format: {response}")
+                translated_text = ""
+            
+            logger.info(f"Translation successful: {translated_text[:50]}...")
+            
+            return {
+                "text": translated_text,
+                "confidence": 0.92  # HF API doesn't return confidence scores
+            }
+            
+        except Exception as e:
+            logger.error(f"HF Inference API translation error: {str(e)}")
+            raise
+    
+    def _call_api_with_retry(self, url: str, json_data: dict, max_retries: int = 3) -> dict:
+        """
+        Call HF Inference API with retry logic for model loading.
+        
+        Args:
+            url: API endpoint URL
+            json_data: Request JSON payload
+            max_retries: Maximum number of retries
+            
+        Returns:
+            dict: API response JSON
+        """
+        for attempt in range(max_retries):
+            response = requests.post(url, headers=self.headers, json=json_data)
+            
+            if response.status_code == 200:
+                return response.json()
+            
+            elif response.status_code == 503:
+                # Model is loading (cold start)
+                try:
+                    error_info = response.json()
+                    estimated_time = error_info.get('estimated_time', 20)
+                    logger.warning(
+                        f"Model loading (attempt {attempt + 1}/{max_retries}). "
+                        f"Waiting {estimated_time}s..."
+                    )
+                    time.sleep(estimated_time)
+                except:
+                    time.sleep(20)
+                    
+            elif response.status_code == 429:
+                logger.error("HF Inference API rate limit exceeded")
+                raise Exception(
+                    "Rate limit exceeded. Upgrade your HF plan or wait before retrying."
+                )
+                
+            elif response.status_code in [401, 403]:
+                logger.error(f"HF API authentication failed: {response.text}")
+                raise Exception(
+                    "Invalid or missing HF_TOKEN. Get one from "
+                    "https://huggingface.co/settings/tokens"
+                )
+                
+            else:
+                logger.error(f"HF API error {response.status_code}: {response.text}")
+                raise Exception(f"HF Inference API error: {response.text}")
+        
+        raise Exception(f"Model failed to load after {max_retries} retries")
+
+
+class HFInferenceTTS(TTSService):
+    """
+    Text-to-Speech service using Hugging Face Inference API.
+    Calls cloud-hosted MMS-TTS models for speech synthesis.
+    """
+    
+    # Note: HF deprecated api-inference.huggingface.co in favor of serverless inference  
+    # Using the Inference Client approach or direct model endpoints
+    API_URL = "https://api-inference.huggingface.co/models/"
+    
+    def __init__(self):
+        """Initialize HF Inference TTS service."""
+        self.model_configs = settings.MODELS['tts']
+        self.token = settings.HF_TOKEN
+        
+        if not self.token:
+            logger.warning(
+                "HF_TOKEN not set. HF Inference API requests may be rate-limited."
+            )
+        
+        self.headers = {
+            "Authorization": f"Bearer {self.token}",
+            "Content-Type": "application/json"
+        } if self.token else {"Content-Type": "application/json"}
+        
+        # Create temp directory for audio files
+        self.temp_dir = os.path.join(settings.MEDIA_ROOT, 'tts_temp')
+        os.makedirs(self.temp_dir, exist_ok=True)
+    
+    def synthesize(self, text: str, language: str, gender: str = "neutral") -> str:
+        """
+        Synthesize speech from text using HF Inference API.
+        
+        Args:
+            text: Text to synthesize
+            language: Target language code (kikuyu, swahili, english)
+            gender: Voice gender preference (not used by HF API)
+            
+        Returns:
+            str: Path to generated audio file
+        """
+        model_name = self.model_configs.get(language)
+        if not model_name:
+            raise ValueError(f"No TTS model configured for language: {language}")
+        
+        logger.info(f"Synthesizing speech via HF API for {language}: {text[:50]}...")
+        
+        try:
+            # Prepare request payload
+            payload = {"inputs": text}
+            
+            # Call HF Inference API
+            audio_bytes = self._call_api_with_retry(
+                url=f"{self.API_URL}{model_name}",
+                json_data=payload,
+                max_retries=3
+            )
+            
+            # Save audio to file
+            audio_filename = f"tts_{language}_{uuid.uuid4().hex[:8]}.flac"
+            audio_path = os.path.join(self.temp_dir, audio_filename)
+            
+            with open(audio_path, 'wb') as audio_file:
+                audio_file.write(audio_bytes)
+            
+            logger.info(f"TTS successful: {audio_path}")
+            
+            return audio_path
+            
+        except Exception as e:
+            logger.error(f"HF Inference API TTS error for {language}: {str(e)}")
+            raise
+    
+    def _call_api_with_retry(self, url: str, json_data: dict, max_retries: int = 3) -> bytes:
+        """
+        Call HF Inference API with retry logic for model loading.
+        
+        Args:
+            url: API endpoint URL
+            json_data: Request JSON payload
+            max_retries: Maximum number of retries
+            
+        Returns:
+            bytes: Audio data
+        """
+        for attempt in range(max_retries):
+            response = requests.post(url, headers=self.headers, json=json_data)
+            
+            if response.status_code == 200:
+                return response.content
+            
+            elif response.status_code == 503:
+                # Model is loading (cold start)
+                try:
+                    error_info = response.json()
+                    estimated_time = error_info.get('estimated_time', 20)
+                    logger.warning(
+                        f"Model loading (attempt {attempt + 1}/{max_retries}). "
+                        f"Waiting {estimated_time}s..."
+                    )
+                    time.sleep(estimated_time)
+                except:
+                    time.sleep(20)
+                    
+            elif response.status_code == 429:
+                logger.error("HF Inference API rate limit exceeded")
+                raise Exception(
+                    "Rate limit exceeded. Upgrade your HF plan or wait before retrying."
+                )
+                
+            elif response.status_code in [401, 403]:
+                logger.error(f"HF API authentication failed: {response.text}")
+                raise Exception(
+                    "Invalid or missing HF_TOKEN. Get one from "
+                    "https://huggingface.co/settings/tokens"
+                )
+                
+            else:
+                logger.error(f"HF API error {response.status_code}: {response.text}")
+                raise Exception(f"HF Inference API error: {response.text}")
+        
+        raise Exception(f"Model failed to load after {max_retries} retries")

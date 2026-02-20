@@ -1,0 +1,15 @@
+venv/
+*.pyc
+__pycache__/
+*.sqlite3
+.env
+.idea/
+.vscode/
+*.log
+.DS_Store
+*.swp
+*.swo
+db.sqlite3
+media/
+staticfiles/
+.gameplan.md

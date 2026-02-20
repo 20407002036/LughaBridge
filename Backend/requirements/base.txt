@@ -1,0 +1,29 @@
+# Core Django
+Django>=4.2,<5.0
+djangorestframework>=3.14
+django-environ>=0.11
+django-cors-headers>=4.3
+
+# WebSocket support
+channels>=4.0
+channels-redis>=4.1
+daphne>=4.0
+
+# Redis
+redis>=5.0
+
+# Background tasks
+django-q2>=1.6
+
+# Hugging Face & ML
+transformers>=4.36
+huggingface_hub>=0.20  # For Inference API client
+torch>=2.1
+torchaudio>=2.1
+accelerate>=0.25
+sentencepiece>=0.1.99
+
+# Audio processing
+pydub>=0.25
+librosa>=0.10
+soundfile>=0.12

@@ -1,73 +1,76 @@
-# Welcome to your Lovable project
+# LughaBridge
 
-## Project info
+A real-time translation and communication platform with separate backend and frontend applications.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## Project Structure
 
-## How can I edit this code?
+This is a monorepo containing:
+- **Backend/** - Django backend with translation services, WebSocket support, and API
+- **Frontend/** - React/TypeScript frontend with Vite, Tailwind CSS, and shadcn-ui
 
-There are several ways of editing your application.
+## Getting Started
 
-**Use Lovable**
+### Frontend Development
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+The frontend is built with React, TypeScript, Vite, and Tailwind CSS.
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
+# Step 1: Clone the repository
 git clone <YOUR_GIT_URL>
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+# Step 2: Navigate to the frontend directory
+cd LughaBridge/Frontend
 
-# Step 3: Install the necessary dependencies.
-npm i
+# Step 3: Install dependencies
+npm install
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Step 4: Start the development server
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+The frontend dev server will run on `http://localhost:8080`
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### Backend Development
 
-**Use GitHub Codespaces**
+The backend is a Django application with translation services.
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+```sh
+# Step 1: Navigate to the backend directory
+cd Backend
 
-## What technologies are used for this project?
+# Step 2: Create and activate a virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 
-This project is built with:
+# Step 3: Install dependencies
+pip install -r requirements.txt
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
+# Step 4: Run migrations
+python manage.py migrate
+
+# Step 5: Start the development server
+python manage.py runserver
+```
+
+## Technologies
+
+### Frontend
+- React with TypeScript
+- Vite (build tool)
 - Tailwind CSS
+- shadcn-ui components
+- npm (package manager)
 
-## How can I deploy this project?
+### Backend
+- Django
+- Django Channels (WebSocket support)
+- Translation services (NLLB, Groq, HuggingFace)
+- Redis (caching and task queue)
+- Q Cluster (async task processing)
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+## Development Notes
 
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+- Frontend runs on port 8080 (Vite dev server)
+- Backend runs on port 8000 (Django dev server)
+- Make sure to run both servers for full functionality
+- The old demo file is preserved at `Frontend/demo.html`
