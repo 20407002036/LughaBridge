@@ -40,10 +40,10 @@ const MessageBubble = ({ message }: MessageBubbleProps) => {
       transition={{ duration: 0.25, ease: 'easeOut' }}
       className={`flex ${isLeft ? 'justify-start' : 'justify-end'} px-4`}
     >
-      <div className={`relative max-w-[85%] sm:max-w-[70%] ${isLeft ? 'glass-bubble-left' : 'glass-bubble-right'} p-3.5 space-y-2`}>
+      <div className={`relative max-w-[85%] sm:max-w-[70%] ${isLeft ? 'glass-bubble-left' : 'glass-bubble-right'} p-4 space-y-2`}>
         {/* Language badge */}
         <div className="flex items-center justify-between">
-          <span className={`text-[10px] font-semibold uppercase tracking-widest ${
+          <span className={`text-xs font-semibold uppercase tracking-widest ${
             message.originalLanguage === 'Kikuyu' ? 'text-gold' : 'text-emerald-accent'
           }`}>
             {message.originalLanguage}
@@ -51,7 +51,7 @@ const MessageBubble = ({ message }: MessageBubbleProps) => {
           <div className="relative" ref={menuRef}>
             <button
               onClick={() => setMenuOpen(!menuOpen)}
-              className="p-1 rounded-full hover:bg-muted/50 transition-colors text-muted-foreground"
+              className="p-1 rounded-full hover:bg-black/5 transition-colors text-muted-foreground"
             >
               <MoreVertical size={14} />
             </button>
@@ -62,13 +62,13 @@ const MessageBubble = ({ message }: MessageBubbleProps) => {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 8, scale: 0.98 }}
                   transition={{ duration: 0.15 }}
-                  className={`absolute ${isLeft ? 'left-0' : 'right-0'} top-8 z-50 w-52 rounded-xl glass-surface p-1.5 shadow-xl`}
+                  className={`absolute ${isLeft ? 'left-0' : 'right-0'} top-8 z-50 w-52 rounded-xl bg-white/80 backdrop-blur-xl border border-white/90 p-1.5 shadow-lg`}
                 >
                   {menuItems.map((item) => (
                     <button
                       key={item.label}
                       onClick={() => setMenuOpen(false)}
-                      className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs text-foreground/80 hover:bg-muted/50 transition-colors"
+                      className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs text-foreground/80 hover:bg-black/5 transition-colors"
                     >
                       <item.icon size={14} strokeWidth={1.5} className="text-muted-foreground" />
                       {item.label}

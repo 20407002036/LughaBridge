@@ -3,11 +3,11 @@ import { motion } from 'framer-motion';
 type Status = 'idle' | 'listening' | 'transcribing' | 'translating' | 'completed' | 'error';
 
 const statusConfig: Record<Status, { label: string; color: string; pulse: boolean }> = {
-  idle: { label: 'Connected', color: 'bg-emerald-light', pulse: false },
-  listening: { label: 'Listening to your voice…', color: 'bg-emerald-light', pulse: true },
-  transcribing: { label: 'Transcribing with care…', color: 'bg-gold', pulse: true },
-  translating: { label: 'Translating…', color: 'bg-gold', pulse: true },
-  completed: { label: 'Connected', color: 'bg-emerald-light', pulse: false },
+  idle: { label: 'Connected', color: 'bg-secondary', pulse: false },
+  listening: { label: 'Listening to your voice…', color: 'bg-secondary', pulse: true },
+  transcribing: { label: 'Transcribing with care…', color: 'bg-primary', pulse: true },
+  translating: { label: 'Translating…', color: 'bg-primary', pulse: true },
+  completed: { label: 'Connected', color: 'bg-secondary', pulse: false },
   error: { label: 'Connection lost', color: 'bg-destructive', pulse: false },
 };
 

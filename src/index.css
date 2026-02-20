@@ -1,103 +1,189 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-
 @layer base {
   :root {
-    --background: 210 22% 4%;
-    --foreground: 0 0% 95%;
+    /* UNIVERSAL DESIGN SYSTEM - Light Glass Morphism */
+    
+    /* Background (Glass Morphism base) */
+    --background: 225 25% 95%;       /* #ECEEF4 - Soft cool gray */
+    --foreground: 220 25% 10%;       /* #1A1D23 - Deep charcoal text */
+    
+    /* Semantic surfaces */
+    --card: 0 0% 100%;               /* #FFFFFF - Pure white card */
+    --card-foreground: 220 25% 10%;  /* #1A1D23 - Text on card */
+    
+    --popover: 0 0% 100%;            /* #FFFFFF - White overlay */
+    --popover-foreground: 220 25% 10%; /* #1A1D23 - Text on overlay */
+    
+    /* Primary: Soft Indigo-Blue */
+    --primary: 230 65% 55%;          /* #4F6AE8 - Calm blue */
+    --primary-foreground: 0 0% 100%; /* White text on primary */
+    
+    /* Secondary: Soft Teal */
+    --secondary: 168 55% 45%;        /* #27B08B - Fresh teal */
+    --secondary-foreground: 0 0% 100%; /* White text on teal */
+    
+    --muted: 220 14% 75%;            /* #B8BCC8 - Soft gray */
+    --muted-foreground: 220 10% 45%; /* #6B7080 - Muted text */
+    
+    --accent: 250 60% 60%;           /* #7C5CE8 - Soft purple accent */
+    --accent-foreground: 0 0% 100%;  /* White text on accent */
+    
+    --destructive: 0 65% 58%;        /* #E85454 - Soft red */
+    --destructive-foreground: 0 0% 100%; /* White text on error */
+    
+    /* Interactive elements */
+    --border: 220 15% 88%;           /* #DDE1E8 - Subtle border */
+    --input: 220 15% 88%;            /* #DDE1E8 - Input border */
+    --ring: 230 65% 55%;             /* #4F6AE8 - Focus ring (blue) */
+    
+    --radius: 1rem;                  /* 16px - Use universal scale */
+    
+    /* Glass morphism (Light context) */
+    --glass: 220 20% 98%;            /* Near-white frosted glass */
+    --glass-border: 220 15% 90%;     /* Soft glass border */
+    
+    /* Brand colors - Light palette */
+    --brand-blue: 230 65% 55%;       /* #4F6AE8 */
+    --brand-teal: 168 55% 45%;       /* #27B08B */
+    --brand-purple: 250 60% 60%;     /* #7C5CE8 */
+    --brand-coral: 12 80% 62%;       /* #F07052 */
 
-    --card: 210 18% 7%;
-    --card-foreground: 0 0% 95%;
-
-    --popover: 210 18% 7%;
-    --popover-foreground: 0 0% 95%;
-
-    --primary: 43 64% 52%;
-    --primary-foreground: 210 22% 4%;
-
-    --secondary: 114 38% 25%;
-    --secondary-foreground: 0 0% 95%;
-
-    --muted: 210 12% 12%;
-    --muted-foreground: 210 8% 55%;
-
-    --accent: 114 38% 25%;
-    --accent-foreground: 0 0% 95%;
-
-    --destructive: 0 62% 50%;
-    --destructive-foreground: 0 0% 95%;
-
-    --border: 210 10% 15%;
-    --input: 210 10% 15%;
-    --ring: 43 64% 52%;
-
-    --radius: 1rem;
-
-    --sidebar-background: 210 18% 6%;
-    --sidebar-foreground: 0 0% 90%;
-    --sidebar-primary: 43 64% 52%;
-    --sidebar-primary-foreground: 210 22% 4%;
-    --sidebar-accent: 210 12% 12%;
-    --sidebar-accent-foreground: 0 0% 90%;
-    --sidebar-border: 210 10% 15%;
-    --sidebar-ring: 43 64% 52%;
-
-    /* Custom LughaBridge tokens */
-    --gold: 43 64% 52%;
-    --gold-glow: 43 64% 52%;
-    --emerald: 114 38% 25%;
-    --emerald-light: 114 38% 35%;
-    --obsidian: 210 22% 4%;
-    --obsidian-light: 210 18% 7%;
-    --glass: 210 15% 12%;
-    --glass-border: 210 10% 18%;
+    /* Voice / waveform accents */
+    --wave-from: 250 70% 70%;        /* Soft purple */
+    --wave-to: 230 75% 60%;          /* Indigo-blue */
+    --wave-surface: 0 0% 100%;       /* Base for gradients */
+    
+    /* Legacy aliases (backward compat) */
+    --gold: 230 65% 55%;             /* Map gold → blue */
+    --gold-glow: 230 65% 55%;
+    --emerald: 168 55% 45%;          /* Map emerald → teal */
+    --emerald-light: 168 55% 55%;
+    --obsidian: 220 25% 10%;
+    --obsidian-light: 220 20% 15%;
+    
+    /* Sidebar */
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 220 25% 10%;
+    --sidebar-primary: 230 65% 55%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 14% 92%;
+    --sidebar-accent-foreground: 220 25% 10%;
+    --sidebar-border: 220 15% 88%;
+    --sidebar-ring: 230 65% 55%;
   }
 }
 
+/* Universal reset */
 @layer base {
   * {
     @apply border-border;
   }
 
+  html, body {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
   body {
     @apply bg-background text-foreground font-sans antialiased;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', 'Roboto', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Universal focus styles (Accessibility) */
+  *:focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+
+  /* Universal scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: hsl(var(--background));
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted));
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground));
   }
 }
 
 @layer utilities {
+  /* Glass morphism definitions (Light context - frosted glass) */
   .glass-surface {
-    @apply bg-[hsl(var(--glass)/0.5)] backdrop-blur-xl border border-[hsl(var(--glass-border)/0.3)];
+    @apply bg-white/60 backdrop-blur-xl border border-white/80 shadow-sm;
   }
 
+  /* Message bubbles - Sender A (left) */
   .glass-bubble-left {
-    @apply bg-[hsl(var(--glass)/0.6)] backdrop-blur-xl border border-[hsl(var(--glass-border)/0.2)] rounded-2xl rounded-bl-md;
+    @apply bg-white/50 backdrop-blur-lg border border-white/70 rounded-2xl rounded-tl-md shadow-sm;
   }
 
+  /* Message bubbles - Sender B (right) */
   .glass-bubble-right {
-    @apply bg-[hsl(var(--emerald)/0.15)] backdrop-blur-xl border border-[hsl(var(--emerald)/0.2)] rounded-2xl rounded-br-md;
+    @apply bg-gradient-to-br from-[hsl(var(--primary)/0.08)] to-[hsl(var(--primary)/0.03)] backdrop-blur-lg border border-[hsl(var(--primary)/0.15)] rounded-2xl rounded-tr-md shadow-sm;
   }
 
+  /* Glow effects - light mode (soft colored shadows) */
   .glow-gold {
-    box-shadow: 0 0 30px hsl(43 64% 52% / 0.2), 0 0 60px hsl(43 64% 52% / 0.1);
-  }
-
-  .glow-emerald {
-    box-shadow: 0 0 30px hsl(114 38% 25% / 0.3), 0 0 60px hsl(114 38% 25% / 0.15);
+    box-shadow: 0 4px 20px hsl(230 65% 55% / 0.2), 0 0 40px hsl(230 65% 55% / 0.08);
   }
 
   .glow-gold-subtle {
-    box-shadow: 0 0 15px hsl(43 64% 52% / 0.15);
+    box-shadow: 0 4px 15px hsl(230 65% 55% / 0.15);
   }
 
+  .glow-emerald {
+    box-shadow: 0 4px 20px hsl(168 55% 45% / 0.25), 0 0 40px hsl(168 55% 45% / 0.1);
+  }
+
+  /* Text utilities */
   .text-gold {
-    color: hsl(var(--gold));
+    @apply text-[hsl(var(--primary))];
   }
 
   .text-emerald-accent {
-    color: hsl(var(--emerald-light));
+    @apply text-[hsl(var(--secondary))];
+  }
+
+  /* Responsive container */
+  .container-chat {
+    @apply max-w-lg mx-auto;
+  }
+
+  /* Sticky positioning utilities */
+  .sticky-header {
+    @apply sticky top-0 z-30;
+  }
+
+  .sticky-input {
+    @apply sticky bottom-0 z-30;
+  }
+
+  /* Touch target minimums (44px per universal rules) */
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px];
+  }
+
+  /* Ambient idle layer */
+  .ambient-layer {
+    @apply absolute inset-0 pointer-events-none opacity-70;
+    background: radial-gradient(circle at 20% 20%, hsla(var(--wave-from), 0.10), transparent 45%),
+                radial-gradient(circle at 80% 40%, hsla(var(--wave-to), 0.12), transparent 42%),
+                radial-gradient(circle at 50% 80%, hsla(var(--secondary), 0.10), transparent 40%);
   }
 }

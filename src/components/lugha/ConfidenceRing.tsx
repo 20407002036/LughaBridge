@@ -25,7 +25,7 @@ const ConfidenceRing = ({ confidence, size = 28 }: ConfidenceRingProps) => {
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke="hsl(var(--emerald-light))"
+          stroke="hsl(var(--secondary))"
           strokeWidth={strokeWidth}
           strokeDasharray={circumference}
           strokeDashoffset={offset}

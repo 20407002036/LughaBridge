@@ -34,9 +34,9 @@ const MicButton = ({ state, onPress }: MicButtonProps) => {
         disabled={isProcessing}
         className={`
           relative flex items-center justify-center w-16 h-16 rounded-full transition-all duration-300
-          ${isRecording ? 'bg-secondary glow-emerald animate-pulse-glow' : ''}
-          ${!isRecording && !isProcessing ? 'bg-primary glow-gold-subtle animate-mic-idle' : ''}
-          ${isProcessing ? 'bg-muted' : ''}
+          ${isRecording ? 'bg-secondary text-white glow-emerald animate-pulse-glow' : ''}
+          ${!isRecording && !isProcessing ? 'bg-primary text-white glow-gold-subtle animate-mic-idle' : ''}
+          ${isProcessing ? 'bg-white/60 backdrop-blur-sm border border-white/80 shadow-sm' : ''}
           disabled:cursor-wait
         `}
       >
