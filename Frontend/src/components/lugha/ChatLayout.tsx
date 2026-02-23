@@ -20,6 +20,7 @@ interface ChatLayoutProps {
   sourceLanguage?: string;
   targetLanguage?: string;
   connectionStatus?: 'disconnected' | 'connecting' | 'connected' | 'error';
+  errorMessage?: string | null;
 }
 
 const ChatLayout = ({ 
@@ -36,6 +37,7 @@ const ChatLayout = ({
   sourceLanguage,
   targetLanguage,
   connectionStatus = 'disconnected',
+  errorMessage = null,
 }: ChatLayoutProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -106,6 +108,21 @@ const ChatLayout = ({
           <DemoModeToggle enabled={demoMode} onToggle={onDemoToggle} />
         </div>
       </header>
+
+      {/* Error Message */}
+      {errorMessage && (
+        <div className="mx-4 mt-4 p-4 bg-red-50 border border-red-200 rounded-xl">
+          <div className="flex items-start gap-3">
+            <svg className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-red-900">Error</p>
+              <p className="text-sm text-red-700 mt-1">{errorMessage}</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Messages */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto py-4 space-y-3 scrollbar-none">

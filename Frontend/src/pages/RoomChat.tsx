@@ -166,10 +166,21 @@ const RoomChat = () => {
       } catch (error) {
         if (!cancelled) {
           console.error('Failed to connect to room:', error);
-          setRoomError('Failed to connect to room. Please try again.');
+          const errorMessage = error instanceof Error && error.message.includes('not found')
+            ? `Room ${code} not found. It may have expired or doesn't exist.`
+            : 'Failed to connect to room. Please check the room code and try again.';
+          
+          setRoomError(errorMessage);
           setConnectionStatus('error');
           setLoadingRoom(false);
           setSystemState('error');
+          
+          // Redirect to home after 3 seconds if room not found
+          setTimeout(() => {
+            if (!cancelled) {
+              navigate('/');
+            }
+          }, 3000);
         }
       }
     };
@@ -307,6 +318,7 @@ const RoomChat = () => {
       sourceLanguage={roomLanguages?.source || 'kikuyu'}
       targetLanguage={roomLanguages?.target || 'english'}
       connectionStatus={isDemo || demoMode ? 'disconnected' : connectionStatus}
+      errorMessage={roomError}
       roomCode={code || 'DEMO'}
       onBack={() => navigate('/')}
     />

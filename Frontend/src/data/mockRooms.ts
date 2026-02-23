@@ -2,21 +2,21 @@ import type { Room } from '@/types';
 
 export const mockRooms: Room[] = [
   {
-    code: 'LUGHA-2A8F',
+    code: '2A8FXY',
     sourceLanguage: 'Kikuyu',
     targetLanguage: 'English',
     createdAt: new Date(Date.now() - 3600000),
     participantCount: 2,
   },
   {
-    code: 'LUGHA-9K3D',
+    code: '9K3DZW',
     sourceLanguage: 'English',
     targetLanguage: 'Kikuyu',
     createdAt: new Date(Date.now() - 7200000),
     participantCount: 1,
   },
   {
-    code: 'LUGHA-5M7P',
+    code: '5M7P4Q',
     sourceLanguage: 'Kikuyu',
     targetLanguage: 'English',
     createdAt: new Date(Date.now() - 1800000),
@@ -26,8 +26,8 @@ export const mockRooms: Room[] = [
 
 export function generateRoomCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let code = 'LUGHA-';
-  for (let i = 0; i < 4; i++) {
+  let code = '';
+  for (let i = 0; i < 6; i++) {
     code += chars[Math.floor(Math.random() * chars.length)];
   }
   return code;

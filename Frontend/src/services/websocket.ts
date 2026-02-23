@@ -36,6 +36,7 @@ export interface TextMessagePayload {
 
 export type WSEventCallback = (data: any) => void;
 
+
 export class RoomWebSocket {
   private ws: WebSocket | null = null;
   private listeners: Map<WSMessageType | 'open' | 'close' | 'error', Set<WSEventCallback>> = new Map();
@@ -85,11 +86,27 @@ export class RoomWebSocket {
           console.log(`WebSocket disconnected (code: ${event.code})`);
           this.emit('close', { code: event.code, reason: event.reason });
           
-          // Attempt reconnection if not intentionally closed
-          if (!this.isIntentionallyClosed && this.reconnectAttempts < this.maxReconnectAttempts) {
+          // Don't reconnect on certain error codes
+          const doNotReconnectCodes = [
+            4004, // Room not found (custom code from backend)
+            4001, // Unauthorized
+            1008, // Policy violation
+            1003, // Unsupported data
+            1002, // Protocol error
+          ];
+          
+          const shouldReconnect = 
+            !this.isIntentionallyClosed && 
+            !doNotReconnectCodes.includes(event.code) &&
+            this.reconnectAttempts < this.maxReconnectAttempts;
+          
+          // Attempt reconnection if appropriate
+          if (shouldReconnect) {
             this.reconnectAttempts++;
             console.log(`Reconnecting... (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
             setTimeout(() => this.connect(), this.reconnectDelay);
+          } else if (doNotReconnectCodes.includes(event.code)) {
+            console.log(`Not reconnecting due to error code ${event.code}`);
           }
         };
       } catch (error) {

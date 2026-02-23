@@ -29,6 +29,12 @@ class RoomConsumer(AsyncWebsocketConsumer):
         
         if not room_exists:
             logger.warning(f"Connection rejected - room not found: {self.room_code}")
+            # Must accept first, then close with custom code so the client receives it
+            await self.accept()
+            await self.send(text_data=json.dumps({
+                'type': 'error',
+                'message': f'Room not found: {self.room_code}'
+            }))
             await self.close(code=4004)
             return
         

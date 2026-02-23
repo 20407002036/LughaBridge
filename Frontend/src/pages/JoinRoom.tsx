@@ -74,7 +74,7 @@ const JoinRoom = () => {
                     setError(null);
                   }}
                   onKeyDown={(e) => e.key === 'Enter' && handleJoin()}
-                  placeholder="LUGHA-XXXX"
+                  placeholder="ABC123"
                   maxLength={12}
                   className="w-full h-14 pl-11 pr-4 text-center text-xl font-mono font-bold tracking-widest bg-white/50 backdrop-blur-sm border border-white/70 rounded-2xl text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))] focus:ring-offset-2 focus:ring-offset-transparent transition-all"
                 />
