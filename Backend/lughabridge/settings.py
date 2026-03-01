@@ -108,14 +108,23 @@ ASGI_APPLICATION = "lughabridge.asgi.application"
 
 
 # Channels configuration
-CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": {
-            "hosts": [env('REDIS_URL')],
+# Use in-memory channel layer for development (no Redis needed)
+if DEBUG:
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels.layers.InMemoryChannelLayer"
+        }
+    }
+else:
+    # Production: use Redis
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels_redis.core.RedisChannelLayer",
+            "CONFIG": {
+                "hosts": [env('REDIS_URL')],
+            },
         },
-    },
-}
+    }
 
 
 # Database

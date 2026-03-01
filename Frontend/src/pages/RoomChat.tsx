@@ -65,8 +65,8 @@ const RoomChat = () => {
 
         // Store room languages
         setRoomLanguages({
-          source: roomData.source_language || roomData.source_lang || 'kikuyu',
-          target: roomData.target_language || roomData.target_lang || 'english',
+          source: roomData.source_language || 'kikuyu',
+          target: roomData.target_language || 'english',
         });
 
         // Create WebSocket connection
