@@ -15,13 +15,8 @@ redis>=5.0
 # Background tasks
 django-q2>=1.6
 
-# Hugging Face & ML
-transformers>=4.36
-huggingface_hub>=0.20  # For Inference API client
-torch>=2.1
-torchaudio>=2.1
-accelerate>=0.25
-sentencepiece>=0.1.99
+# Hugging Face Inference API (cloud-hosted models, use HF GPUs)
+huggingface_hub>=0.20  # For Inference API client (ONLY this is needed)
 
 # Audio processing
 pydub>=0.25

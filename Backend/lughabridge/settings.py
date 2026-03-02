@@ -244,7 +244,10 @@ MODELS = {
         'english': 'facebook/wav2vec2-large-960h-lv60-self',
     },
     'translation': {
-        'model': 'facebook/nllb-200-distilled-600M',
+        # NOTE (March 2026): HF removed free-tier translation hosting.
+        # NLLB is defined here for if/when HF restores it or for local model use.
+        # Active translation is handled by Groq (llama-3.3-70b-versatile) via HybridTranslator.
+        'model': 'facebook/nllb-200-1.3B',
         'lang_codes': {
             'kikuyu': 'kik_Latn',
             'swahili': 'swh_Latn',

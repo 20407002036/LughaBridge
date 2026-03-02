@@ -134,33 +134,51 @@ class HFInferenceTranslator(TranslationService):
         if not src_code or not tgt_code:
             raise ValueError(f"Unsupported language pair: {source_lang} -> {target_lang}")
         
-        logger.info(f"Translating via HF API: {source_lang} -> {target_lang}")
-        
+        logger.info(f"Translating via HF API (direct): {source_lang}({src_code}) -> {target_lang}({tgt_code})")
+
         try:
-            # Call HF Inference API using InferenceClient
-            result = self.client.translation(
-                text,
-                model=self.model_name,
-                src_lang=src_code,
-                tgt_lang=tgt_code
-            )
-            
-            # Extract translated text from response
-            if isinstance(result, dict):
-                translated_text = result.get('translation_text', '')
-            elif isinstance(result, str):
-                translated_text = result
+            import requests
+            import json
+
+            # Call HF Inference API directly with requests.
+            # Uses new router.huggingface.co endpoint (old api-inference.huggingface.co is 410 Gone).
+            api_url = f"https://router.huggingface.co/hf-inference/models/{self.model_name}"
+            headers = {
+                "Authorization": f"Bearer {self.token}",
+                "Content-Type": "application/json",
+            }
+            payload = {
+                "inputs": text,
+                "parameters": {
+                    "src_lang": src_code,
+                    "tgt_lang": tgt_code,
+                },
+            }
+
+            response = requests.post(api_url, headers=headers, json=payload, timeout=30)
+            response.raise_for_status()
+            data = response.json()
+
+            # NLLB returns: [{"translation_text": "..."}]
+            if isinstance(data, list) and data:
+                translated_text = data[0].get("translation_text", "")
+            elif isinstance(data, dict):
+                # Model still loading — {"error": "...", "estimated_time": ...}
+                if "error" in data:
+                    raise RuntimeError(f"HF API error: {data['error']}")
+                translated_text = data.get("translation_text", "")
             else:
-                logger.error(f"Unexpected API response format: {result}")
+                logger.error(f"Unexpected HF API response: {data}")
                 translated_text = ""
-            
-            logger.info(f"Translation successful: {translated_text[:50]}...")
-            
+
+            logger.info(f"HF NLLB translation OK: {translated_text[:60]}")
+
             return {
                 "text": translated_text,
-                "confidence": 0.92  # HF API doesn't return confidence scores
+                "confidence": 0.92,
+                "service_used": "hf_nllb",
             }
-            
+
         except Exception as e:
             logger.error(f"HF Inference API translation error: {str(e)}")
             raise

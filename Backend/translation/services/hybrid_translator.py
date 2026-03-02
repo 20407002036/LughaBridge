@@ -74,21 +74,20 @@ class HybridTranslator(TranslationService):
         # Determine which service to use based on language
         is_swahili = source_lang == 'swahili' or target_lang == 'swahili'
         is_kikuyu = source_lang == 'kikuyu' or target_lang == 'kikuyu'
-        
+
+        # Routing strategy:
+        #   Groq (llama-3.3-70b-versatile) is primary for ALL language pairs.
+        #   HF NLLB was the original Kikuyu primary but HF removed free-tier
+        #   translation hosting (both api-inference.hf.co and router.hf.co return
+        #   404/410 for NLLB models as of March 2026). Groq handles Kikuyu well.
+        #   HF is kept as fallback in case HF restores hosting later.
+
         # Choose primary and fallback services
-        if is_swahili and self.groq_available:
+        if self.groq_available:
             primary_service = ('Groq', self.groq_translator)
             fallback_service = ('HF', self.hf_translator) if self.hf_available else None
-        elif is_kikuyu and self.hf_available:
-            primary_service = ('HF', self.hf_translator)
-            fallback_service = ('Groq', self.groq_translator) if self.groq_available else None
         elif self.hf_available:
-            # Default to HF for better quality
             primary_service = ('HF', self.hf_translator)
-            fallback_service = ('Groq', self.groq_translator) if self.groq_available else None
-        elif self.groq_available:
-            # Use Groq if HF not available
-            primary_service = ('Groq', self.groq_translator)
             fallback_service = None
         else:
             raise RuntimeError("No translation service available")

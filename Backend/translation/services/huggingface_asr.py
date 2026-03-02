@@ -2,9 +2,14 @@
 Hugging Face ASR (Automatic Speech Recognition) service implementation.
 """
 
-import torch
-import torchaudio
-from transformers import AutoProcessor, AutoModelForCTC
+try:
+    import torch
+    import torchaudio
+    from transformers import AutoProcessor, AutoModelForCTC
+    TORCH_AVAILABLE = True
+except ImportError:
+    TORCH_AVAILABLE = False
+
 from django.conf import settings
 from typing import Dict, Any
 import logging
@@ -12,6 +17,15 @@ import logging
 from .base import ASRService
 
 logger = logging.getLogger(__name__)
+
+
+def _check_torch_available():
+    """Check if torch is available, raise error only if actually trying to use it."""
+    if not TORCH_AVAILABLE:
+        raise ImportError(
+            "torch and torchaudio are required for local ASR models. "
+            "Use HF Inference API instead: SET USE_HF_INFERENCE=True in .env"
+        )
 
 
 class HuggingFaceASR(ASRService):
