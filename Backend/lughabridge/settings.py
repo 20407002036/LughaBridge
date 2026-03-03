@@ -108,14 +108,23 @@ ASGI_APPLICATION = "lughabridge.asgi.application"
 
 
 # Channels configuration
-CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": {
-            "hosts": [env('REDIS_URL')],
+# Use in-memory channel layer for development (no Redis needed)
+if DEBUG:
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels.layers.InMemoryChannelLayer"
+        }
+    }
+else:
+    # Production: use Redis
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels_redis.core.RedisChannelLayer",
+            "CONFIG": {
+                "hosts": [env('REDIS_URL')],
+            },
         },
-    },
-}
+    }
 
 
 # Database
@@ -235,7 +244,10 @@ MODELS = {
         'english': 'facebook/wav2vec2-large-960h-lv60-self',
     },
     'translation': {
-        'model': 'facebook/nllb-200-distilled-600M',
+        # NOTE (March 2026): HF removed free-tier translation hosting.
+        # NLLB is defined here for if/when HF restores it or for local model use.
+        # Active translation is handled by Groq (llama-3.3-70b-versatile) via HybridTranslator.
+        'model': 'facebook/nllb-200-1.3B',
         'lang_codes': {
             'kikuyu': 'kik_Latn',
             'swahili': 'swh_Latn',

@@ -35,10 +35,12 @@ export interface JoinRoomResponse {
   room_code: string;
   source_language: string;
   target_language: string;
-  messages: ChatMessage[];
+  messages?: ChatMessage[];
 }
 
 export interface HealthCheckResponse {
   status: string;
   demo_mode: boolean;
 }
+
+export type MessagesResponse = ChatMessage[];

@@ -2,8 +2,12 @@
 MMS-TTS (Massively Multilingual Speech - Text-to-Speech) service implementation.
 """
 
-import torch
-from transformers import VitsModel, AutoTokenizer
+try:
+    import torch
+    from transformers import VitsModel, AutoTokenizer
+    TORCH_AVAILABLE = True
+except ImportError:
+    TORCH_AVAILABLE = False
 from django.conf import settings
 from typing import Dict, Any
 import logging

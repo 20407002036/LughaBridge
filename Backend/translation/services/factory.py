@@ -10,12 +10,29 @@ from django.conf import settings
 import logging
 
 from .base import ASRService, TranslationService, TTSService
-from .huggingface_asr import HuggingFaceASR
-from .nllb_translator import NLLBTranslator
-from .mms_tts import MMSTTS
 from .mock_services import MockASR, MockTranslator, MockTTS
 from .hf_inference_services import HFInferenceASR, HFInferenceTranslator, HFInferenceTTS
-from .hybrid_translator import HybridTranslator
+
+# Optional imports - only load if actually needed (saves startup time and avoids torch dependency)
+try:
+    from .huggingface_asr import HuggingFaceASR
+except ImportError:
+    HuggingFaceASR = None
+
+try:
+    from .nllb_translator import NLLBTranslator
+except ImportError:
+    NLLBTranslator = None
+
+try:
+    from .mms_tts import MMSTTS
+except ImportError:
+    MMSTTS = None
+
+try:
+    from .hybrid_translator import HybridTranslator
+except ImportError:
+    HybridTranslator = None
 
 logger = logging.getLogger(__name__)
 
