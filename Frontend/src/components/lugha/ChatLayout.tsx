@@ -8,6 +8,7 @@ import DemoModeToggle from './DemoModeToggle';
 
 interface ChatLayoutProps {
   messages: ChatMessage[];
+   currentUserChannelName?: string | null;
   systemState: SystemState;
   demoMode: boolean;
   onDemoToggle: (val: boolean) => void;
@@ -19,12 +20,15 @@ interface ChatLayoutProps {
   onSendText?: (text: string, language: string) => void;
   sourceLanguage?: string;
   targetLanguage?: string;
+  voiceLanguage?: string;
+  onVoiceLanguageChange?: (lang: string) => void;
   connectionStatus?: 'disconnected' | 'connecting' | 'connected' | 'error';
   errorMessage?: string | null;
 }
 
 const ChatLayout = ({ 
   messages, 
+   currentUserChannelName,
   systemState, 
   demoMode, 
   onDemoToggle, 
@@ -36,6 +40,8 @@ const ChatLayout = ({
   onSendText,
   sourceLanguage,
   targetLanguage,
+  voiceLanguage,
+  onVoiceLanguageChange,
   connectionStatus = 'disconnected',
   errorMessage = null,
 }: ChatLayoutProps) => {
@@ -139,12 +145,12 @@ const ChatLayout = ({
               Tap the microphone to begin
             </p>
             <p className="text-xs text-muted-foreground/60">
-              Speak in Kikuyu or English
+              Speak in Kikuyu, Swahili, or English
             </p>
           </div>
         )}
         {messages.map((msg) => (
-          <MessageBubble key={msg.id} message={msg} />
+           <MessageBubble key={msg.id} message={msg} currentUserChannelName={currentUserChannelName} />
         ))}
       </div>
 
@@ -157,6 +163,8 @@ const ChatLayout = ({
         onSendText={onSendText}
         sourceLanguage={sourceLanguage}
         targetLanguage={targetLanguage}
+        voiceLanguage={voiceLanguage}
+        onVoiceLanguageChange={onVoiceLanguageChange}
       />
     </div>
   );

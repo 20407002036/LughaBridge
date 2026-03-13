@@ -14,6 +14,8 @@ interface VoiceInputBarProps {
   onSendText?: (text: string, language: string) => void;
   sourceLanguage?: string;
   targetLanguage?: string;
+  voiceLanguage?: string;
+  onVoiceLanguageChange?: (lang: string) => void;
 }
 
 const VoiceInputBar = ({ 
@@ -24,6 +26,8 @@ const VoiceInputBar = ({
   onSendText,
   sourceLanguage = 'kikuyu',
   targetLanguage = 'english',
+  voiceLanguage,
+  onVoiceLanguageChange,
 }: VoiceInputBarProps) => {
   const isRecording = state === 'listening';
   const isProcessing = state === 'transcribing' || state === 'translating';
@@ -66,6 +70,23 @@ const VoiceInputBar = ({
               className="bg-white/45 backdrop-blur-xl border border-white/60 rounded-2xl shadow-sm px-4 py-3"
             >
               <div className="flex flex-col items-center gap-3">
+                {/* Voice language selector */}
+                <div className="flex items-center gap-2 w-full">
+                  <label htmlFor="voice-language" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    I speak:
+                  </label>
+                  <select
+                    id="voice-language"
+                    value={voiceLanguage || sourceLanguage}
+                    onChange={(e) => onVoiceLanguageChange?.(e.target.value)}
+                    disabled={isRecording || isProcessing}
+                    className="flex-1 text-sm px-3 py-1.5 bg-white/60 border border-white/70 rounded-lg focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))] transition-all disabled:opacity-50"
+                  >
+                    <option value={sourceLanguage}>{sourceLanguage.charAt(0).toUpperCase() + sourceLanguage.slice(1)}</option>
+                    <option value={targetLanguage}>{targetLanguage.charAt(0).toUpperCase() + targetLanguage.slice(1)}</option>
+                  </select>
+                </div>
+
                 <div className="relative">
                   {isRecording && (
                     <span className="absolute inset-[-6px] block rounded-full animate-wave-ring" aria-hidden />

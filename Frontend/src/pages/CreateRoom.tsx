@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import type { Language } from '@/types';
 import { api } from '@/services/api';
 
-const languages: Language[] = ['Kikuyu', 'English'];
+const languages: Language[] = ['Kikuyu', 'Swahili', 'English'];
 
 const CreateRoom = () => {
   const navigate = useNavigate();
@@ -26,8 +26,8 @@ const CreateRoom = () => {
     setError(null);
     try {
       const res = await api.createRoom({
-        source_lang: source,
-        target_lang: target,
+        source_lang: source.toLowerCase(),
+        target_lang: target.toLowerCase(),
       });
       setRoomCode(res.room_code);
     } catch {
@@ -87,7 +87,7 @@ const CreateRoom = () => {
                 <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Source Language
                 </label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-3 gap-2">
                   {languages.map((lang) => (
                     <button
                       key={`src-${lang}`}
@@ -116,7 +116,7 @@ const CreateRoom = () => {
                 <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Target Language
                 </label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-3 gap-2">
                   {languages.map((lang) => (
                     <button
                       key={`tgt-${lang}`}

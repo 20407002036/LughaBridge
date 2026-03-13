@@ -47,14 +47,14 @@ const Landing = () => {
                 Bridge Languages in Real-Time
               </h2>
               <p className="text-sm text-muted-foreground leading-relaxed max-w-xs mx-auto">
-                Speak in Kikuyu or English and get instant, high-accuracy voice translation.
+                Speak in Kikuyu, Swahili, or English and get instant, high-accuracy voice translation.
               </p>
             </div>
 
             {/* Feature pills */}
             <div className="flex flex-wrap justify-center gap-2">
               {[
-                { icon: Globe, label: 'Kikuyu ↔ English' },
+                { icon: Globe, label: 'Kikuyu • Swahili • English' },
                 { icon: Mic, label: 'Voice-first' },
                 { icon: Users, label: 'Live rooms' },
               ].map((f) => (

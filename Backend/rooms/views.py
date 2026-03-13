@@ -61,6 +61,7 @@ def create_room(request):
         ws_url = f"ws://{request.get_host()}/ws/room/{room_code}/"
         
         logger.info(f"Room created via API: {room_code}")
+        print(f"Room created: {room_code} ({source_lang} -> {target_lang})")
         
         return Response(
             {
@@ -111,6 +112,7 @@ def join_room(request, room_code):
         
         # Build WebSocket URL
         ws_url = f"ws://{request.get_host()}/ws/room/{room_code}/"
+        print(f"Room joined: {room_code} ({room_data['source_lang']} -> {room_data['target_lang']})")
         
         return Response(
             {
@@ -205,6 +207,7 @@ def health_check(request):
             'status': 'healthy',
             'demo_mode': settings.DEMO_MODE,
             'use_hf_inference': settings.USE_HF_INFERENCE,
+            'use_gtts': getattr(settings, 'USE_GTTS', False),
             'supported_languages': settings.SUPPORTED_LANGUAGES
         },
         status=status.HTTP_200_OK

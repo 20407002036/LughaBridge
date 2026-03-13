@@ -87,6 +87,17 @@ class HFInferenceASR(ASRService):
                 "text": transcribed_text,
                 "confidence": 0.95  # HF API doesn't return confidence scores
             }
+
+        except StopIteration:
+            logger.error(
+                f"ASR model '{model_name}' is NOT hosted on HF Inference API. "
+                f"Change ASR_MODEL_{language.upper()} in .env to a hosted model "
+                f"(e.g. openai/whisper-large-v3) and restart."
+            )
+            raise RuntimeError(
+                f"ASR model '{model_name}' is not available on HuggingFace Inference API. "
+                f"Set ASR_MODEL_{language.upper()} in .env to a hosted model and restart."
+            )
             
         except Exception as e:
             logger.error(f"HF Inference API ASR error for {language}: {str(e)}")
@@ -222,6 +233,8 @@ class HFInferenceTTS(TTSService):
         Returns:
             str: Path to generated audio file
         """
+        import requests as http_requests
+
         model_name = self.model_configs.get(language)
         if not model_name:
             raise ValueError(f"No TTS model configured for language: {language}")
@@ -229,12 +242,26 @@ class HFInferenceTTS(TTSService):
         logger.info(f"Synthesizing speech via HF API for {language}: {text[:50]}...")
         
         try:
-            # Call HF Inference API using InferenceClient
-            audio_bytes = self.client.text_to_speech(
-                text,
-                model=model_name
-            )
-            
+            # Call HF Inference API directly with requests
+            # (InferenceClient fails for MMS-TTS models due to missing provider mapping)
+            api_url = f"https://router.huggingface.co/hf-inference/models/{model_name}"
+            headers = {
+                "Authorization": f"Bearer {self.token}",
+                "Content-Type": "application/json",
+            }
+            payload = {
+                "inputs": text,
+            }
+
+            response = http_requests.post(api_url, headers=headers, json=payload, timeout=30)
+
+            if response.status_code == 200:
+                audio_bytes = response.content
+            else:
+                body = response.text[:500]
+                logger.error(f"HF TTS API error {response.status_code}: {body}")
+                raise RuntimeError(f"HF TTS API error {response.status_code}: {body}")
+
             # Save audio to file
             audio_filename = f"tts_{language}_{uuid.uuid4().hex[:8]}.flac"
             audio_path = os.path.join(self.temp_dir, audio_filename)
@@ -245,7 +272,10 @@ class HFInferenceTTS(TTSService):
             logger.info(f"TTS successful: {audio_path}")
             
             return audio_path
-            
+
+        except RuntimeError:
+            raise
+
         except Exception as e:
             logger.error(f"HF Inference API TTS error for {language}: {str(e)}")
             raise

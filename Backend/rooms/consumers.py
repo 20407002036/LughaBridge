@@ -54,6 +54,7 @@ class RoomConsumer(AsyncWebsocketConsumer):
         await self.send(text_data=json.dumps({
             'type': 'connection_established',
             'room_code': self.room_code,
+            'channel_name': self.channel_name,
             'source_lang': room_data['source_lang'],
             'target_lang': room_data['target_lang'],
             'participant_count': room_data['participants']
@@ -154,8 +155,12 @@ class RoomConsumer(AsyncWebsocketConsumer):
         """
         message_id = data.get('message_id')
         audio_data = data.get('audio_data')  # Base64 encoded
-        language = data.get('language')
-        
+        language = data.get('language', '').lower().strip()
+
+        print("#"*40)
+        print(f" Audio format: {type(audio_data)} for the Language '{language}' (raw from client: '{data.get('language')}')") 
+        print("#"*40)
+
         if not audio_data or not language:
             await self.send(text_data=json.dumps({
                 'type': 'error',
@@ -177,7 +182,8 @@ class RoomConsumer(AsyncWebsocketConsumer):
             self.room_code,
             audio_data,
             language,
-            message_id
+               message_id,
+               self.channel_name
         )
         
         logger.info(f"Voice message queued for processing: {message_id}")
@@ -191,7 +197,7 @@ class RoomConsumer(AsyncWebsocketConsumer):
         """
         message_id = data.get('message_id')
         text = data.get('text')
-        language = data.get('language')
+        language = data.get('language', '').lower().strip()
         
         if not text or not language:
             await self.send(text_data=json.dumps({
@@ -206,7 +212,8 @@ class RoomConsumer(AsyncWebsocketConsumer):
             self.room_code,
             text,
             language,
-            message_id
+               message_id,
+               self.channel_name
         )
     
     # Channel layer event handlers

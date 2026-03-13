@@ -25,8 +25,8 @@ class GroqTranslator(TranslationService):
     def __init__(self):
         """Initialize Groq translator."""
         self.api_key = settings.GROQ_API_KEY
-        self.model = getattr(settings, 'GROQ_MODEL', 'llama-3.3-70b-versatile')
-        
+        self.model = settings.GROQ_MODEL
+
         if not self.api_key or not self.api_key.strip():
             logger.warning(
                 "GROQ_API_KEY not set. Groq disabled for Swahili translation. "

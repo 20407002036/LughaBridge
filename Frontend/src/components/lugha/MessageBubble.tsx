@@ -6,14 +6,29 @@ import ConfidenceRing from './ConfidenceRing';
 
 interface MessageBubbleProps {
   message: ChatMessage;
+   currentUserChannelName?: string | null;
 }
 
-const MessageBubble = ({ message }: MessageBubbleProps) => {
+  const MessageBubble = ({ message, currentUserChannelName }: MessageBubbleProps) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [playingAudio, setPlayingAudio] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
-  const isLeft = message.sender === 'A';
+ 
+   // Determine message alignment:
+   // - If we have channel identification: own messages go RIGHT, others go LEFT
+   // - Fallback for mock messages: sender 'A' goes LEFT (for demo compatibility)
+   const isOwn = message.senderChannelName && currentUserChannelName 
+     ? message.senderChannelName === currentUserChannelName
+     : message.sender === 'B'; // Fallback: 'B' was the "right" sender in demos
+   const isLeft = !isOwn;
+ 
+  const languageTextClass =
+    message.originalLanguage === 'Kikuyu'
+      ? 'text-gold'
+      : message.originalLanguage === 'Swahili'
+        ? 'text-secondary'
+        : 'text-emerald-accent';
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -81,9 +96,7 @@ const MessageBubble = ({ message }: MessageBubbleProps) => {
       <div className={`relative max-w-[85%] sm:max-w-[70%] ${isLeft ? 'glass-bubble-left' : 'glass-bubble-right'} p-4 space-y-2`}>
         {/* Language badge */}
         <div className="flex items-center justify-between">
-          <span className={`text-xs font-semibold uppercase tracking-widest ${
-            message.originalLanguage === 'Kikuyu' ? 'text-gold' : 'text-emerald-accent'
-          }`}>
+          <span className={`text-xs font-semibold uppercase tracking-widest ${languageTextClass}`}>
             {message.originalLanguage}
           </span>
           <div className="relative" ref={menuRef}>

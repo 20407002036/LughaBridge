@@ -1,6 +1,7 @@
 """
 Hybrid translation service that intelligently routes translations.
-Uses Groq for Swahili (fast & free) and HF for Kikuyu (better quality).
+Uses Groq as primary (fast, free) with HF NLLB as fallback.
+Routing is configurable via .env settings.
 """
 
 import logging
@@ -16,18 +17,17 @@ logger = logging.getLogger(__name__)
 
 class HybridTranslator(TranslationService):
     """
-    Hybrid translator that intelligently routes translation requests:
-    - Swahili ↔ English: Use Groq (faster, still accurate)
-    - Kikuyu ↔ English: Use HF NLLB (trained on Kikuyu data)
-    - Fallback: If primary service fails, try the other
+    Hybrid translator that routes translation requests:
+    - When USE_GROQ_TRANSLATION=True: Groq primary for ALL languages, HF fallback
+    - When USE_GROQ_TRANSLATION=False: HF primary, Groq fallback for Swahili only
     """
     
     def __init__(self):
         """Initialize hybrid translator with both Groq and HF."""
-        # Check for non-empty API keys (empty strings should be treated as unavailable)
         self.groq_available = bool(getattr(settings, 'GROQ_API_KEY', '').strip())
         self.hf_available = bool(getattr(settings, 'HF_TOKEN', '').strip())
-        
+        self.groq_primary = getattr(settings, 'USE_GROQ_TRANSLATION', False)
+
         # Initialize services
         self.groq_translator = None
         self.hf_translator = None
@@ -51,83 +51,79 @@ class HybridTranslator(TranslationService):
         if not self.groq_available and not self.hf_available:
             raise RuntimeError(
                 "No translation services available. "
-                "Set either GROQ_API_KEY or HF_TOKEN in environment."
+                "Set either GROQ_API_KEY or HF_TOKEN in .env."
             )
-    
+
+        if self.groq_primary and self.groq_available:
+            logger.info("Hybrid translator: Groq is PRIMARY for all languages")
+        else:
+            logger.info("Hybrid translator: HF is primary, Groq fallback for Swahili")
+
     def translate(self, text: str, source_lang: str, target_lang: str) -> Dict[str, Any]:
         """
         Translate text using the best available service.
         
-        Routing strategy:
-        1. Swahili translations → Try Groq first, fallback to HF
-        2. Kikuyu translations → Try HF first, fallback to Groq
-        3. If one service fails, automatically try the other
-        
-        Args:
-            text: Text to translate
-            source_lang: Source language (kikuyu, swahili, english)
-            target_lang: Target language (kikuyu, swahili, english)
-            
-        Returns:
-            dict: {"text": str, "confidence": float}
+        Routing when USE_GROQ_TRANSLATION=True:
+            All languages → Groq first, HF fallback
+        Routing when USE_GROQ_TRANSLATION=False:
+            Swahili → Groq first, HF fallback
+            Kikuyu  → HF first, Groq fallback
+            Other   → HF first, Groq fallback
         """
-        # Determine which service to use based on language
+        primary, fallback = self._pick_services(source_lang, target_lang)
+
+        # Try primary service
+        primary_error = None
+        try:
+            name, service = primary
+            logger.info(f"Using {name} for {source_lang} -> {target_lang}")
+            result = service.translate(text, source_lang, target_lang)
+            result['service_used'] = name.lower()
+            return result
+        except Exception as e:
+            primary_error = e
+            logger.warning(f"{primary[0]} translation failed: {e}. Trying fallback...")
+
+        # Try fallback
+        if fallback:
+            try:
+                name, service = fallback
+                logger.info(f"Using fallback {name} for {source_lang} -> {target_lang}")
+                result = service.translate(text, source_lang, target_lang)
+                result['service_used'] = name.lower()
+                result['fallback'] = True
+                return result
+            except Exception as fallback_err:
+                logger.error(f"Fallback {fallback[0]} also failed: {fallback_err}")
+                raise RuntimeError(
+                    f"Both translation services failed. "
+                    f"Primary ({primary[0]}): {primary_error}. "
+                    f"Fallback ({fallback[0]}): {fallback_err}"
+                )
+
+        # No fallback available
+        raise primary_error
+
+    def _pick_services(self, source_lang: str, target_lang: str):
+        """Return (primary, fallback) tuples of (name, service)."""
         is_swahili = source_lang == 'swahili' or target_lang == 'swahili'
-        is_kikuyu = source_lang == 'kikuyu' or target_lang == 'kikuyu'
 
-        # Routing strategy:
-        #   Groq (llama-3.3-70b-versatile) is primary for ALL language pairs.
-        #   HF NLLB was the original Kikuyu primary but HF removed free-tier
-        #   translation hosting (both api-inference.hf.co and router.hf.co return
-        #   404/410 for NLLB models as of March 2026). Groq handles Kikuyu well.
-        #   HF is kept as fallback in case HF restores hosting later.
-
-        # Choose primary and fallback services
-        if self.groq_available:
-            primary_service = ('Groq', self.groq_translator)
-            fallback_service = ('HF', self.hf_translator) if self.hf_available else None
+        if self.groq_primary and self.groq_available:
+            # Groq primary for everything
+            primary = ('Groq', self.groq_translator)
+            fallback = ('HF', self.hf_translator) if self.hf_available else None
+        elif is_swahili and self.groq_available:
+            # Legacy mode: Groq for Swahili only
+            primary = ('Groq', self.groq_translator)
+            fallback = ('HF', self.hf_translator) if self.hf_available else None
         elif self.hf_available:
-            primary_service = ('HF', self.hf_translator)
-            fallback_service = None
+            primary = ('HF', self.hf_translator)
+            fallback = ('Groq', self.groq_translator) if self.groq_available else None
+        elif self.groq_available:
+            primary = ('Groq', self.groq_translator)
+            fallback = None
         else:
             raise RuntimeError("No translation service available")
-        
-        # Try primary service
-        try:
-            service_name, service = primary_service
-            logger.info(f"Using {service_name} for {source_lang} -> {target_lang} translation")
-            result = service.translate(text, source_lang, target_lang)
-            
-            # Add metadata about which service was used
-            result['service_used'] = service_name.lower()
-            return result
-            
-        except Exception as e:
-            logger.warning(
-                f"{primary_service[0]} translation failed: {str(e)}. "
-                f"Trying fallback service..."
-            )
-            
-            # Try fallback service if available
-            if fallback_service:
-                try:
-                    service_name, service = fallback_service
-                    logger.info(f"Using fallback {service_name} for translation")
-                    result = service.translate(text, source_lang, target_lang)
-                    
-                    # Add metadata
-                    result['service_used'] = service_name.lower()
-                    result['fallback'] = True
-                    return result
-                    
-                except Exception as fallback_error:
-                    logger.error(f"Fallback {fallback_service[0]} also failed: {fallback_error}")
-                    raise Exception(
-                        f"Both translation services failed. "
-                        f"Primary ({primary_service[0]}): {e}. "
-                        f"Fallback ({fallback_service[0]}): {fallback_error}"
-                    )
-            else:
-                # No fallback available
-                logger.error(f"Translation failed and no fallback available: {e}")
-                raise
+
+        return primary, fallback
+

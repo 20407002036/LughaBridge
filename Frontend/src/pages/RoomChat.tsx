@@ -19,6 +19,8 @@ const RoomChat = () => {
   const [roomError, setRoomError] = useState<string | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<'disconnected' | 'connecting' | 'connected' | 'error'>('disconnected');
   const [roomLanguages, setRoomLanguages] = useState<{ source: string; target: string } | null>(null);
+  const [selectedVoiceLanguage, setSelectedVoiceLanguage] = useState<string | null>(null);
+    const [myChannelName, setMyChannelName] = useState<string | null>(null);
   
   const wsRef = useRef<RoomWebSocket | null>(null);
   const demoIndex = useRef(0);
@@ -28,12 +30,17 @@ const RoomChat = () => {
   // Voice recording hook
   const { isRecording, startRecording, stopRecording } = useVoiceRecording({
     onRecordingComplete: (audioData) => {
-      if (wsRef.current && roomLanguages) {
-        // Send voice message via WebSocket
-        const messageId = wsRef.current.sendVoiceMessage(audioData, roomLanguages.source);
-        processingMessageIds.current.add(messageId);
-        setSystemState('transcribing');
+      if (!wsRef.current || !roomLanguages) {
+        setRoomError('Unable to send voice message. Please reconnect to the room and try again.');
+        setSystemState('idle');
+        return;
       }
+
+      // Send voice message via WebSocket using the speaker's selected language
+      const speakerLang = selectedVoiceLanguage || roomLanguages.source;
+      const messageId = wsRef.current.sendVoiceMessage(audioData, speakerLang);
+      processingMessageIds.current.add(messageId);
+      setSystemState('transcribing');
     },
     onError: (error) => {
       console.error('Recording error:', error);
@@ -65,8 +72,8 @@ const RoomChat = () => {
 
         // Store room languages
         setRoomLanguages({
-          source: roomData.source_language || 'kikuyu',
-          target: roomData.target_language || 'english',
+          source: roomData.source_language || roomData.source_lang || 'kikuyu',
+          target: roomData.target_language || roomData.target_lang || 'english',
         });
 
         // Create WebSocket connection
@@ -89,6 +96,11 @@ const RoomChat = () => {
               source: data.source_lang || 'kikuyu',
               target: data.target_lang || 'english',
             });
+             // Store our channel name for message identification
+             if (data.channel_name) {
+               setMyChannelName(data.channel_name);
+               ws.setMyChannelName(data.channel_name);
+             }
           }
         });
 
@@ -230,7 +242,8 @@ const RoomChat = () => {
   }, []);
 
   const handleMicPress = useCallback(() => {
-    if (systemState !== 'idle' && systemState !== 'completed') return;
+    const canPressMic = systemState === 'idle' || systemState === 'completed' || systemState === 'listening';
+    if (!canPressMic) return;
     
     // Use demo simulation if in demo mode or on demo room
     if (demoMode || isDemo) {
@@ -241,12 +254,18 @@ const RoomChat = () => {
     // Real voice recording
     if (isRecording) {
       stopRecording();
-      setSystemState('transcribing');
     } else {
       setSystemState('listening');
-      startRecording();
+      void startRecording();
     }
   }, [systemState, demoMode, isDemo, isRecording, startRecording, stopRecording, simulateMessage]);
+
+  const handleToggleVoice = useCallback((val: boolean) => {
+    if (!val && isRecording) {
+      stopRecording();
+    }
+    setVoiceMode(val);
+  }, [isRecording, stopRecording]);
 
   const handleDemoToggle = useCallback((val: boolean) => {
     setDemoMode(val);
@@ -308,15 +327,18 @@ const RoomChat = () => {
   return (
     <ChatLayout
       messages={messages}
+       currentUserChannelName={myChannelName}
       systemState={loadingRoom ? 'transcribing' : roomError ? 'error' : systemState}
       demoMode={demoMode}
       onDemoToggle={handleDemoToggle}
       onMicPress={handleMicPress}
       voiceMode={voiceMode}
-      onToggleVoice={setVoiceMode}
+      onToggleVoice={handleToggleVoice}
       onSendText={handleSendText}
       sourceLanguage={roomLanguages?.source || 'kikuyu'}
       targetLanguage={roomLanguages?.target || 'english'}
+      voiceLanguage={selectedVoiceLanguage || roomLanguages?.source || 'kikuyu'}
+      onVoiceLanguageChange={setSelectedVoiceLanguage}
       connectionStatus={isDemo || demoMode ? 'disconnected' : connectionStatus}
       errorMessage={roomError}
       roomCode={code || 'DEMO'}

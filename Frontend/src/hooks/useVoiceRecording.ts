@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { blobToBase64 } from '@/services/websocket';
 
 interface UseVoiceRecordingOptions {
@@ -27,9 +27,35 @@ export function useVoiceRecording(options: UseVoiceRecordingOptions = {}): UseVo
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
+  const isStartingRef = useRef(false);
+
+  const cleanupStream = useCallback(() => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+  }, []);
+
+  const resetRecorderState = useCallback(() => {
+    mediaRecorderRef.current = null;
+    audioChunksRef.current = [];
+    setIsRecording(false);
+    isStartingRef.current = false;
+  }, []);
 
   const startRecording = useCallback(async () => {
+    if (isStartingRef.current) {
+      return;
+    }
+
+    const existingRecorder = mediaRecorderRef.current;
+    if (existingRecorder && existingRecorder.state === 'recording') {
+      setIsRecording(true);
+      return;
+    }
+
     try {
+      isStartingRef.current = true;
       setError(null);
 
       // Request microphone access
@@ -45,6 +71,13 @@ export function useVoiceRecording(options: UseVoiceRecordingOptions = {}): UseVo
       streamRef.current = stream;
       audioChunksRef.current = [];
 
+      stream.getAudioTracks().forEach((track) => {
+        track.onended = () => {
+          resetRecorderState();
+          cleanupStream();
+        };
+      });
+
       // Create MediaRecorder
       const mediaRecorder = new MediaRecorder(stream, {
         mimeType: 'audio/webm',
@@ -59,6 +92,8 @@ export function useVoiceRecording(options: UseVoiceRecordingOptions = {}): UseVo
       };
 
       mediaRecorder.onstop = async () => {
+        setIsRecording(false);
+
         try {
           // Combine audio chunks into a blob
           const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
@@ -70,12 +105,6 @@ export function useVoiceRecording(options: UseVoiceRecordingOptions = {}): UseVo
           if (onRecordingComplete) {
             onRecordingComplete(base64Audio);
           }
-
-          // Clean up stream
-          if (streamRef.current) {
-            streamRef.current.getTracks().forEach((track) => track.stop());
-            streamRef.current = null;
-          }
         } catch (err) {
           const error = err instanceof Error ? err : new Error('Failed to process audio');
           console.error('Error processing recording:', error);
@@ -83,6 +112,9 @@ export function useVoiceRecording(options: UseVoiceRecordingOptions = {}): UseVo
           if (onError) {
             onError(error);
           }
+        } finally {
+          cleanupStream();
+          resetRecorderState();
         }
       };
 
@@ -90,6 +122,8 @@ export function useVoiceRecording(options: UseVoiceRecordingOptions = {}): UseVo
         const error = new Error('MediaRecorder error');
         console.error('MediaRecorder error:', event);
         setError(error.message);
+        cleanupStream();
+        resetRecorderState();
         if (onError) {
           onError(error);
         }
@@ -98,10 +132,13 @@ export function useVoiceRecording(options: UseVoiceRecordingOptions = {}): UseVo
       // Start recording
       mediaRecorder.start();
       setIsRecording(true);
+      isStartingRef.current = false;
       console.log('Recording started');
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Failed to start recording');
       console.error('Error starting recording:', error);
+      cleanupStream();
+      resetRecorderState();
       
       if (error.name === 'NotAllowedError') {
         setError('Microphone access denied. Please allow microphone access and try again.');
@@ -114,16 +151,57 @@ export function useVoiceRecording(options: UseVoiceRecordingOptions = {}): UseVo
       if (onError) {
         onError(error);
       }
+    } finally {
+      isStartingRef.current = false;
     }
-  }, [sampleRate, onRecordingComplete, onError]);
+  }, [sampleRate, onRecordingComplete, onError, cleanupStream, resetRecorderState]);
 
   const stopRecording = useCallback(() => {
-    if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
+    const mediaRecorder = mediaRecorderRef.current;
+
+    if (!mediaRecorder) {
+      setIsRecording(false);
+      cleanupStream();
+      return;
+    }
+
+    if (mediaRecorder.state === 'inactive') {
+      setIsRecording(false);
+      cleanupStream();
+      resetRecorderState();
+      return;
+    }
+
+    try {
+      mediaRecorder.stop();
       setIsRecording(false);
       console.log('Recording stopped');
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error('Failed to stop recording');
+      console.error('Error stopping recording:', error);
+      setError(error.message);
+      cleanupStream();
+      resetRecorderState();
+      if (onError) {
+        onError(error);
+      }
     }
-  }, [isRecording]);
+  }, [cleanupStream, resetRecorderState, onError]);
+
+  useEffect(() => {
+    return () => {
+      const mediaRecorder = mediaRecorderRef.current;
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        try {
+          mediaRecorder.stop();
+        } catch {
+          // no-op
+        }
+      }
+      cleanupStream();
+      resetRecorderState();
+    };
+  }, [cleanupStream, resetRecorderState]);
 
   return {
     isRecording,

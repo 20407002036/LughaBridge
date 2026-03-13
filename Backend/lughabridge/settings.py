@@ -38,10 +38,16 @@ DEMO_MODE = env('DEMO_MODE')
 # Hugging Face Inference API mode flag
 USE_HF_INFERENCE = env.bool('USE_HF_INFERENCE', default=False)
 
-# Groq API configuration (for faster Swahili translation)
+# Groq API configuration (primary cloud provider for ASR + translation)
 GROQ_API_KEY = env('GROQ_API_KEY', default='')
 USE_GROQ_FOR_SWAHILI = env.bool('USE_GROQ_FOR_SWAHILI', default=False)
 GROQ_MODEL = env('GROQ_MODEL', default='llama-3.3-70b-versatile')
+GROQ_ASR_MODEL = env('GROQ_ASR_MODEL', default='whisper-large-v3')
+USE_GROQ_ASR = env.bool('USE_GROQ_ASR', default=True)
+USE_GROQ_TRANSLATION = env.bool('USE_GROQ_TRANSLATION', default=True)
+
+# gTTS configuration (lightweight Google Translate TTS — no GPU required)
+USE_GTTS = env.bool('USE_GTTS', default=False)
 
 # Validate that DEMO_MODE and USE_HF_INFERENCE are not both enabled
 if DEMO_MODE and USE_HF_INFERENCE:
@@ -108,23 +114,14 @@ ASGI_APPLICATION = "lughabridge.asgi.application"
 
 
 # Channels configuration
-# Use in-memory channel layer for development (no Redis needed)
-if DEBUG:
-    CHANNEL_LAYERS = {
-        "default": {
-            "BACKEND": "channels.layers.InMemoryChannelLayer"
-        }
-    }
-else:
-    # Production: use Redis
-    CHANNEL_LAYERS = {
-        "default": {
-            "BACKEND": "channels_redis.core.RedisChannelLayer",
-            "CONFIG": {
-                "hosts": [env('REDIS_URL')],
-            },
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [env('REDIS_URL')],
         },
-    }
+    },
+}
 
 
 # Database
@@ -236,28 +233,25 @@ if HF_HUB_ENABLE_HF_TRANSFER == '1':
 
 SUPPORTED_LANGUAGES = env.list('SUPPORTED_LANGUAGES', default=['kikuyu', 'english'])
 
-# Model paths
+# Model paths – override any model from .env (restart required after change)
 MODELS = {
     'asr': {
-        'kikuyu': 'badrex/w2v-bert-2.0-kikuyu-asr',
-        'swahili': 'thinkKenya/wav2vec2-large-xls-r-300m-sw',
-        'english': 'facebook/wav2vec2-large-960h-lv60-self',
+        'kikuyu': env('ASR_MODEL_KIKUYU', default='openai/whisper-large-v3'),
+        'swahili': env('ASR_MODEL_SWAHILI', default='openai/whisper-large-v3'),
+        'english': env('ASR_MODEL_ENGLISH', default='openai/whisper-large-v3'),
     },
     'translation': {
-        # NOTE (March 2026): HF removed free-tier translation hosting.
-        # NLLB is defined here for if/when HF restores it or for local model use.
-        # Active translation is handled by Groq (llama-3.3-70b-versatile) via HybridTranslator.
-        'model': 'facebook/nllb-200-1.3B',
+        'model': env('TRANSLATION_MODEL', default='facebook/nllb-200-distilled-600M'),
         'lang_codes': {
-            'kikuyu': 'kik_Latn',
-            'swahili': 'swh_Latn',
-            'english': 'eng_Latn',
+            'kikuyu': env('LANG_CODE_KIKUYU', default='kik_Latn'),
+            'swahili': env('LANG_CODE_SWAHILI', default='swh_Latn'),
+            'english': env('LANG_CODE_ENGLISH', default='eng_Latn'),
         }
     },
     'tts': {
-        'kikuyu': 'facebook/mms-tts-kik',
-        'swahili': 'facebook/mms-tts-swh',
-        'english': 'facebook/mms-tts-eng',
+        'kikuyu': env('TTS_MODEL_KIKUYU', default='facebook/mms-tts-kik'),
+        'swahili': env('TTS_MODEL_SWAHILI', default='facebook/mms-tts-swh'),
+        'english': env('TTS_MODEL_ENGLISH', default='facebook/mms-tts-eng'),
     },
 }
 

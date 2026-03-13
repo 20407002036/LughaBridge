@@ -34,6 +34,16 @@ try:
 except ImportError:
     HybridTranslator = None
 
+try:
+    from .groq_asr import GroqASR
+except ImportError:
+    GroqASR = None
+
+try:
+    from .gtts_tts import GttsTTS
+except ImportError:
+    GttsTTS = None
+
 logger = logging.getLogger(__name__)
 
 
@@ -56,6 +66,12 @@ class ModelFactory:
     # Hybrid translator (HF + Groq)
     _hybrid_translator = None
     
+    # Groq instances
+    _groq_asr_service = None
+
+    # gTTS instance
+    _gtts_tts_service = None
+
     # Mock instances
     _mock_asr = None
     _mock_translator = None
@@ -71,17 +87,35 @@ class ModelFactory:
             use_hf_inference: Override HF Inference mode. If None, uses settings.USE_HF_INFERENCE
             
         Returns:
-            ASRService instance (MockASR, HFInferenceASR, or HuggingFaceASR)
+            ASRService instance (MockASR, GroqASR, HFInferenceASR, or HuggingFaceASR)
         """
         demo_mode = use_demo if use_demo is not None else settings.DEMO_MODE
         hf_mode = use_hf_inference if use_hf_inference is not None else settings.USE_HF_INFERENCE
-        
+        use_groq = getattr(settings, 'USE_GROQ_ASR', False)
+        groq_key = getattr(settings, 'GROQ_API_KEY', '').strip()
+
         if demo_mode:
             if cls._mock_asr is None:
                 logger.info("Creating MockASR service (demo mode)")
                 cls._mock_asr = MockASR()
             return cls._mock_asr
-        elif hf_mode:
+        elif use_groq and groq_key and GroqASR is not None:
+            # Groq ASR is checked independently — works with or without USE_HF_INFERENCE
+            if cls._groq_asr_service is None:
+                try:
+                    logger.info("Creating GroqASR service (Groq Whisper — primary)")
+                    cls._groq_asr_service = GroqASR()
+                except Exception as e:
+                    logger.warning(f"Failed to create GroqASR: {e}")
+                    cls._groq_asr_service = None
+
+            if cls._groq_asr_service is not None:
+                return cls._groq_asr_service
+
+            # Groq failed — fall through to HF or local
+            logger.warning("GroqASR unavailable, falling back")
+
+        if hf_mode:
             if cls._hf_asr_service is None:
                 logger.info("Creating HFInferenceASR service (HF Inference API mode)")
                 cls._hf_asr_service = HFInferenceASR()
@@ -106,14 +140,17 @@ class ModelFactory:
         """
         demo_mode = use_demo if use_demo is not None else settings.DEMO_MODE
         hf_mode = use_hf_inference if use_hf_inference is not None else settings.USE_HF_INFERENCE
-        
+        use_groq_translation = getattr(settings, 'USE_GROQ_TRANSLATION', False)
+        groq_key = getattr(settings, 'GROQ_API_KEY', '').strip()
+
         if demo_mode:
             if cls._mock_translator is None:
                 logger.info("Creating MockTranslator service (demo mode)")
                 cls._mock_translator = MockTranslator()
             return cls._mock_translator
-        elif hf_mode:
-            # Use HybridTranslator when in HF mode (it handles Groq + HF routing)
+        elif (use_groq_translation and groq_key and HybridTranslator is not None) or hf_mode:
+            # HybridTranslator handles Groq + HF routing — use it whenever
+            # Groq is configured OR when in HF Inference mode
             if cls._hybrid_translator is None:
                 logger.info("Creating HybridTranslator service (intelligent routing: Groq for Swahili, HF for Kikuyu)")
                 cls._hybrid_translator = HybridTranslator()
@@ -134,16 +171,22 @@ class ModelFactory:
             use_hf_inference: Override HF Inference mode. If None, uses settings.USE_HF_INFERENCE
             
         Returns:
-            TTSService instance (MockTTS, HFInferenceTTS, or MMSTTS)
+            TTSService instance (MockTTS, GttsTTS, HFInferenceTTS, or MMSTTS)
         """
         demo_mode = use_demo if use_demo is not None else settings.DEMO_MODE
         hf_mode = use_hf_inference if use_hf_inference is not None else settings.USE_HF_INFERENCE
-        
+        use_gtts = getattr(settings, 'USE_GTTS', False)
+
         if demo_mode:
             if cls._mock_tts is None:
                 logger.info("Creating MockTTS service (demo mode)")
                 cls._mock_tts = MockTTS()
             return cls._mock_tts
+        elif use_gtts and GttsTTS is not None:
+            if cls._gtts_tts_service is None:
+                logger.info("Creating GttsTTS service (Google Translate TTS)")
+                cls._gtts_tts_service = GttsTTS()
+            return cls._gtts_tts_service
         elif hf_mode:
             if cls._hf_tts_service is None:
                 logger.info("Creating HFInferenceTTS service (HF Inference API mode)")
@@ -164,7 +207,9 @@ class ModelFactory:
         cls._hf_asr_service = None
         cls._hf_translation_service = None
         cls._hf_tts_service = None
+        cls._groq_asr_service = None
         cls._hybrid_translator = None
+        cls._gtts_tts_service = None
         cls._mock_asr = None
         cls._mock_translator = None
         cls._mock_tts = None

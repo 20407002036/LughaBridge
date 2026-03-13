@@ -1,10 +1,11 @@
 export type MessageSender = 'A' | 'B';
-export type MessageLanguage = 'Kikuyu' | 'English';
+export type MessageLanguage = 'Kikuyu' | 'Swahili' | 'English';
 export type SystemState = 'idle' | 'listening' | 'transcribing' | 'translating' | 'completed' | 'error';
 
 export interface ChatMessage {
   id: string;
   sender: MessageSender;
+   senderChannelName?: string;
   originalText: string;
   translatedText: string;
   originalLanguage: MessageLanguage;

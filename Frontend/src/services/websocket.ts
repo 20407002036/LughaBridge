@@ -46,6 +46,7 @@ export class RoomWebSocket {
   private maxReconnectAttempts = 5;
   private reconnectDelay = 2000;
   private isIntentionallyClosed = false;
+   private myChannelName: string | null = null;
 
   constructor(roomCode: string, wsBaseUrl?: string) {
     this.roomCode = roomCode;
@@ -203,6 +204,14 @@ export class RoomWebSocket {
   getReadyState(): number | null {
     return this.ws?.readyState ?? null;
   }
+
+   getMyChannelName(): string | null {
+     return this.myChannelName;
+   }
+
+   setMyChannelName(channelName: string): void {
+     this.myChannelName = channelName;
+   }
 }
 
 // Helper function to convert Blob to base64
@@ -223,6 +232,7 @@ export function normalizeMessage(msg: any): ChatMessage {
   return {
     id: msg.id || msg.message_id || `msg-${Date.now()}`,
     sender: (msg.sender as ChatMessage['sender']) ?? 'A',
+   senderChannelName: msg.sender_channel_name,
     originalText: msg.original_text || msg.originalText || '',
     translatedText: msg.translated_text || msg.translatedText || '',
     originalLanguage: (msg.original_language || msg.originalLanguage || 'Kikuyu') as ChatMessage['originalLanguage'],

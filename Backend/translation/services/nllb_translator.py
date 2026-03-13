@@ -2,12 +2,8 @@
 NLLB (No Language Left Behind) translation service implementation.
 """
 
-try:
-    import torch
-    from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
-    TORCH_AVAILABLE = True
-except ImportError:
-    TORCH_AVAILABLE = False
+import torch
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 from django.conf import settings
 from typing import Dict, Any
 import logging
